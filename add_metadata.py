@@ -39,7 +39,7 @@ def main():
         print(f"Testing agent {agent}... with_restarts is set to {with_restarts}")
         pr = 0
         while env.test_to != 0 or pr == 0:
-            observation = env.reset()
+            observation = env.reset(int(1e9))
             done = False
             while not done:
                 action = agent.act(observation)

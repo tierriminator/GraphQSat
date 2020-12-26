@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-python3 dqn.py \
-  --logdir ./log \
+python3 main.py \
+  --logdir /cluster/scratch/aunagar/graphqsat/log \
   --env-name sat-v0 \
-  --train-problems-paths ./data/uf50-218-tvt/train \
-  --eval-problems-paths ./data/uf50-218-tvt/validation \
+  --train-problems-paths /cluster/scratch/aunagar/graphqsat/data/unifrandom3sat/uf50_218/train/ \
+  --eval-problems-paths /cluster/scratch/aunagar/graphqsat/data/unifrandom3sat/uf50_218/eval/ \
   --lr 0.00002 \
   --bsize 64 \
   --buffer-size 20000 \
