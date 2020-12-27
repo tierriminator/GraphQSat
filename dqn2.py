@@ -142,16 +142,16 @@ class DQN(object):
         with open(train_status["buffer_path"], "rb") as f:
             self.buffer = pickle.load(f)
         self.learner = GraphLearner(net, target_net, self.buffer, args)
-        learner.step_ctr = train_status["step_ctr"]
+        self.learner.step_ctr = train_status["step_ctr"]
 
-        learner.optimizer = train_status["optimizer_class"](
+        self.learner.optimizer = train_status["optimizer_class"](
             net.parameters(), lr=args.lr
         )
-        learner.optimizer.load_state_dict(train_status["optimizer_state_dict"])
-        learner.lr_scheduler = train_status["scheduler_class"](
-            learner.optimizer, args.lr_scheduler_frequency, args.lr_scheduler_gamma
+        self.learner.optimizer.load_state_dict(train_status["optimizer_state_dict"])
+        self.learner.lr_scheduler = train_status["scheduler_class"](
+            self.learner.optimizer, args.lr_scheduler_frequency, args.lr_scheduler_gamma
         )
-        learner.lr_scheduler.load_state_dict(train_status["scheduler_state_dict"])
+        self.learner.lr_scheduler.load_state_dict(train_status["scheduler_state_dict"])
 
         # load misc training status params
         self.n_trans = train_status["transitions_seen"]
