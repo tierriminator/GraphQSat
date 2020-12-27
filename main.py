@@ -44,14 +44,17 @@ def train(args):
     # train
     dqn.train()
 
-def eval(eval_args):
+def eval_runtime(eval_args):
     with open(os.path.join(eval_args.model_dir, "status.yaml"), "r") as f:
         train_status = yaml.load(f, Loader=yaml.Loader)
     
     dqn = DQN(eval_args, train_status, True)
-
-    # evaluate
+    
+    # evaluate run-time
     dqn.eval_all()
+
+    # evaluate q-values
+    print(dqn.eval_q_from_file(agg = "mean"))
 
 
 

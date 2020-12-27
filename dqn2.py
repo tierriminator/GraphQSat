@@ -101,8 +101,9 @@ class DQN(object):
     DQN object for setting up env, agent, learner
     Training happens in train() function
     For evaluation there are two modes:
-    (1) normal evaluation on the whole eval set happens in eval_all()
-    (2) evaluation for Q-value happens in eval_q()
+    (1) runtime evaluation for the problems in eval_problems_paths happens in eval_runtime()
+    (2) Q-value evaluation for the problems from directory happens in eval_q_from_file()
+    (3) Q-value evaluation for the given graph happens in eval_q_from_graph
     """
     def __init__(self, args, train_status = None, eval = False):
         self.writer = SummaryWriter()
@@ -383,7 +384,7 @@ class DQN(object):
                 )
                 save_flag = False
     
-    def eval_all(self):
+    def eval_runtime(self):
         """
         Evaluation on different problem sets to compare performance of RL solver.
         This function will directly use function available in gqsat/utils.py
@@ -407,13 +408,14 @@ class DQN(object):
                 f"median_relative_score: {np.nanmedian(res_list)}, mean_relative_score: {np.mean(res_list)}"
             )
 
-    def eval_q(self, eval_problems_paths = None):
+    def eval_q_from_file(self, eval_problems_paths = None, agg = "sum"):
         """
         Q-value evaluation of problems in eval_problems_paths.
         If eval_problems_paths is None, evaluation will happen in args.eval_problems_paths
         
         :param eval_problems_paths: dir(s) where problems are saved for evaluation
-
+        :param agg: aggregation of q-values for a graph (either "sum" or "mean")
+        
         :returns res_q: Dict of Dicts where structure of dict is as follows
                         res_q[eval_problem_path][problem_filename] = QValue
         """
@@ -440,9 +442,9 @@ class DQN(object):
                     obs = eval_env.reset(
                         max_decisions_cap = self.args.test_time_max_decisions_allowed
                     )
-                    q = self.agent.forward([obs])
+                    q = self.eval_q_from_graph([obs], agg)
 
-                    q_scores[eval_env.curr_problem] = q.max(1).values.sum().cpu().item()
+                    q_scores[eval_env.curr_problem] = q
 
                     pr += 1
             
@@ -450,6 +452,19 @@ class DQN(object):
         
         return res_q
 
+    def eval_q_from_graph(self, hist_buffer, agg = "sum"):
+        """
+        Evaluation of q-value from the graph structure. This function directly calls forward pass for the agent.
+        :param hist_buffer: list of size 1 with all elements for graph (vertex_data, edge_data, connectivity, global_data)
+        :param agg: aggregation of q-values for a graph (either "sum" or "mean")
 
-
-
+        :returns q: q-value for a given graph
+        """
+        q = self.agent.forward(hist_buffer)
+        if agg == "sum":
+            q = q.max(1).values.sum().cpu().item()
+        elif agg == "mean":
+            q = q.max(1).values.mean().cpu().item()
+        else:
+            raise ValueError(f"agg {agg} is not recognized")
+        return q
