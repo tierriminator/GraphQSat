@@ -460,11 +460,16 @@ class DQN(object):
 
         :returns q: q-value for a given graph
         """
+        # For now we use the agent to get the q-values of the solver.
+        # This will however not do any simplifications by MiniSat for our problem.
+        # TODO: Use MiniSat for initial simplification of the problem, as done in GQSAT
         q = self.agent.forward(hist_buffer)
         if agg == "sum":
             q = q.max(1).values.sum().cpu().item()
         elif agg == "mean":
             q = q.max(1).values.mean().cpu().item()
+        elif agg == "max":
+            q = q.flatten().max().cpu().item()
         else:
             raise ValueError(f"agg {agg} is not recognized")
         return q
