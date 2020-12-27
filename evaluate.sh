@@ -11,8 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-python3 evaluate.py \
+PATH_TO_EVAL_DATA=/cluster/scratch/aunagar/graphqsat/data/unifrandom3sat/uf50_218/test/
+MODEL_DIR=/cluster/home/aunagar/dl-project-2020/code/GraphQSat/runs/Dec26_00-30-25_lo-s4-009/
+CHECKPOINT=model_50005
+python3 main.py \
+  --evaluate \
   --logdir ./log \
   --env-name sat-v0 \
   --core-steps -1 \
@@ -20,6 +23,6 @@ python3 evaluate.py \
   --eval-time-limit 100000000000000 \
   --no_restarts \
   --test_time_max_decisions_allowed 500 \
-  --eval-problems-paths PATH_TO_EVAL_DATA \
-  --model-dir MODEL_DIR \
-  --model-checkpoint CHECKPOINT.chkp
+  --eval-problems-paths $PATH_TO_EVAL_DATA \
+  --model-dir $MODEL_DIR \
+  --model-checkpoint $CHECKPOINT.chkp

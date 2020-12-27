@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os, sys
 import numpy as np
 import torch
-
+import argparse
 import yaml
 
-from gqsat.utils import build_argparser
+from gqsat.utils import build_argparser, build_eval_argparser
 from dqn2 import DQN
 
 def train(args):
@@ -41,18 +42,48 @@ def train(args):
         dqn = DQN(args)
 
     # train
-    dqn.train(args)
+    dqn.train()
+
+def eval(eval_args):
+    with open(os.path.join(eval_args.model_dir, "status.yaml"), "r") as f:
+        train_status = yaml.load(f, Loader=yaml.Loader)
+    
+    dqn = DQN(eval_args, train_status, True)
+
+    # evaluate
+    dqn.eval_all()
+
 
 
 
 if __name__ == "__main__":
-    parser = build_argparser()
-    args = parser.parse_args()
-    args.device = (
-        torch.device("cpu")
-        if args.no_cuda or not torch.cuda.is_available()
-        else torch.device("cuda")
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--evaluate",
+        dest="to_train",
+        help="evaluation mode",
+        action="store_false"
     )
+    parser.set_defaults(to_train=True)
+    current_args,_ = parser.parse_known_args()
+    if current_args.to_train:
+        print("In training mode")
+        parser = build_argparser()
+        args = parser.parse_args()
+        args.device = (
+            torch.device("cpu")
+            if args.no_cuda or not torch.cuda.is_available()
+            else torch.device("cuda")
+        )
 
-    # training
-    train(args)
+        # training
+        train(args)
+    
+    else:
+        print("In evaluation mode")
+        eval_parser = build_eval_argparser()
+        eval_args, others = eval_parser.parse_known_args()
+
+        # evaluation
+        eval(eval_args)
+        

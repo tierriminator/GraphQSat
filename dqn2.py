@@ -16,10 +16,11 @@ import numpy as np
 import torch
 
 import os
-from collections import deque
+from collections import deque, defaultdict
 import pickle
 import copy
 import yaml
+import time
 
 from gqsat.utils import build_argparser, evaluate, make_env
 from gqsat.models import EncoderCoreDecoder, SatModel
@@ -99,17 +100,30 @@ class DQN(object):
     """
     DQN object for setting up env, agent, learner
     Training happens in train() function
+    For evaluation there are two modes:
+    (1) normal evaluation on the whole eval set happens in eval_all()
+    (2) evaluation for Q-value happens in eval_q()
     """
-    def __init__(self, args, train_status = None):
+    def __init__(self, args, train_status = None, eval = False):
         self.writer = SummaryWriter()
         
         if train_status is not None:
-            self._init_from_status(args, train_status)
+            if not eval:
+                self._init_from_status(args, train_status)
+            else:
+                self._init_for_eval(args, train_status)
         else:
             self._init_from_scratch(args)
         print(args.__str__())
 
     def _init_from_status(self, args, train_status):
+        """
+        Initialization for training from previously incomplete run
+        :param args: arguments for training
+        :param train_status: train status from status.yaml file from the previous run
+
+        :returns: different self.object to be used in train() function
+        """
         
         self.eval_resume_signal = train_status["in_eval_mode"]
         # load the model
@@ -148,7 +162,15 @@ class DQN(object):
 
         self.best_eval_so_far = train_status["best_eval_so_far"]
 
+        self.args = args
+
     def _init_from_scratch(self, args):
+        """
+        Initialization for training from scratch
+        :param args: arguments for training
+
+        :returns: different self.object to be used in train() function
+        """
         # training mode, learning from scratch or continuing learning from some previously trained model
         args.logdir = self.writer.logdir
 
@@ -206,31 +228,68 @@ class DQN(object):
         self.ep = 0
         self.learner = GraphLearner(net, target_net, self.buffer, args)
         self.eval_resume_signal = False
+        self.args = args
 
-    def train(self, args):
+    def _init_for_eval(self, args, train_status):
+        """
+        Initialization for evaluating on problems from a given directory
+        :param args: arguments for evaluation
+        :param train_status: training status from status.yaml file from the run
+        """
+        eval_args = copy.deepcopy(args)
+        args = train_status["args"]
+
+        # use same args used for training and overwrite them with those asked for eval
+        for k, v in vars(eval_args).items():
+            setattr(args, k, v)
+
+        args.device = (
+            torch.device("cpu")
+            if args.no_cuda or not torch.cuda.is_available()
+            else torch.device("cuda")
+        )
+
+        net = SatModel.load_from_yaml(os.path.join(args.model_dir, "model.yaml")).to(
+            args.device
+        )
+
+        # modify core steps for the eval as requested
+        if args.core_steps != -1:
+            # -1 if use the same as for training
+            net.steps = args.core_steps
+
+        net.load_state_dict(
+            torch.load(os.path.join(args.model_dir, args.model_checkpoint)), strict=False
+        )
+
+        self.agent = GraphAgent(net, args)
+        self.agent.net.eval()
+
+        self.args = args
+
+    def train(self):
         """
         training happens here.
-        args: arguments in training
         """
-        while self.learner.step_ctr < args.batch_updates:
+        while self.learner.step_ctr < self.args.batch_updates:
 
             ret = 0
-            obs = self.env.reset(args.train_time_max_decisions_allowed)
+            obs = self.env.reset(self.args.train_time_max_decisions_allowed)
             done = self.env.isSolved
 
-            if args.history_len > 1:
+            if self.args.history_len > 1:
                 raise NotImplementedError(
                     "History len greater than one is not implemented for graph nets."
                 )
-            hist_buffer = deque(maxlen=args.history_len)
-            for _ in range(args.history_len):
+            hist_buffer = deque(maxlen=self.args.history_len)
+            for _ in range(self.args.history_len):
                 hist_buffer.append(obs)
             ep_step = 0
 
             save_flag = False
 
             while not done:
-                annealed_eps = get_annealed_eps(self.n_trans, args)
+                annealed_eps = get_annealed_eps(self.n_trans, self.args)
                 action = self.agent.act(hist_buffer, eps=annealed_eps)
                 next_obs, r, done, _ = self.env.step(action)
                 self.buffer.add_transition(obs, action, r, done)
@@ -239,8 +298,8 @@ class DQN(object):
                 hist_buffer.append(obs)
                 ret += r
 
-                if (not self.n_trans % args.step_freq) and (
-                    self.buffer.ctr > max(args.init_exploration_steps, args.bsize + 1)
+                if (not self.n_trans % self.args.step_freq) and (
+                    self.buffer.ctr > max(self.args.init_exploration_steps, self.args.bsize + 1)
                     or self.buffer.full
                 ):
                     step_info = self.learner.step()
@@ -250,7 +309,7 @@ class DQN(object):
                     # we increment the step_ctr in the learner.step(), that's why we need to do -1 in tensorboarding
                     # we do not need to do -1 in checking for frequency since 0 has already passed
 
-                    if not self.learner.step_ctr % args.save_freq:
+                    if not self.learner.step_ctr % self.args.save_freq:
                         # save the exact model you evaluated and make another save after the episode ends
                         # to have proper transitions in the replay buffer to pickle
                         status_path = save_training_state(
@@ -259,15 +318,15 @@ class DQN(object):
                             self.ep - 1,
                             self.n_trans,
                             self.best_eval_so_far,
-                            args,
+                            self.args,
                             in_eval_mode=self.eval_resume_signal,
                         )
                         save_flag = True
                     if (
-                        args.env_name == "sat-v0" and not self.learner.step_ctr % args.eval_freq
+                        self.args.env_name == "sat-v0" and not self.learner.step_ctr % self.args.eval_freq
                     ) or self.eval_resume_signal:
                         scores, _, self.eval_resume_signal = evaluate(
-                            self.agent, args, include_train_set=False
+                            self.agent, self.args, include_train_set=False
                         )
 
                         for sc_key, sc_val in scores.items():
@@ -319,7 +378,78 @@ class DQN(object):
                     self.ep - 1,
                     self.n_trans,
                     self.best_eval_so_far,
-                    args,
+                    self.args,
                     in_eval_mode=self.eval_resume_signal,
                 )
                 save_flag = False
+    
+    def eval_all(self):
+        """
+        Evaluation on different problem sets to compare performance of RL solver.
+        This function will directly use function available in gqsat/utils.py
+        :param args: arguments for evaluation
+        """
+        st_time = time.time()
+        scores, eval_metadata, _ = evaluate(self.agent, self.args)
+        end_time = time.time()
+
+        print(
+            f"Evaluation is over. It took {end_time - st_time} seconds for the whole procedure"
+        )
+
+        # with open("../eval_results.pkl", "wb") as f:
+        #     pickle.dump(scores, f)
+
+        for pset, pset_res in scores.items():
+            res_list = [el for el in pset_res.values()]
+            print(f"Results for {pset}")
+            print(
+                f"median_relative_score: {np.nanmedian(res_list)}, mean_relative_score: {np.mean(res_list)}"
+            )
+
+    def eval_q(self, eval_problems_paths = None):
+        """
+        Q-value evaluation of problems in eval_problems_paths.
+        If eval_problems_paths is None, evaluation will happen in args.eval_problems_paths
+        
+        :param eval_problems_paths: dir(s) where problems are saved for evaluation
+
+        :returns res_q: Dict of Dicts where structure of dict is as follows
+                        res_q[eval_problem_path][problem_filename] = QValue
+        """
+        # if eval problems are not provided q value evaluation happens for the
+        # problem sets in self.args.eval_problems_paths
+        if not eval_problems_paths:
+            eval_problems_paths = self.args.eval_problems_paths
+
+        problem_sets = (
+            [eval_problems_paths]
+            if not self.args.eval_separately_on_each
+            else [k for k in self.args.eval_problems_paths.split(":")]
+        )
+        
+        res_q = defaultdict(dict)
+
+        for pset in problem_sets:
+            eval_env = make_env(pset, self.args, test_mode=True)
+            q_scores = {}
+            pr = 0
+            with torch.no_grad():
+                while eval_env.test_to != 0 or pr == 0:
+
+                    obs = eval_env.reset(
+                        max_decisions_cap = self.args.test_time_max_decisions_allowed
+                    )
+                    q = self.agent.forward([obs])
+
+                    q_scores[eval_env.curr_problem] = q.max(1).values.sum().cpu().item()
+
+                    pr += 1
+            
+            res_q[pset] = q_scores
+        
+        return res_q
+
+
+
+
