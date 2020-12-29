@@ -101,6 +101,9 @@ class gym_sat_Env(gym.Env):
         self.step_ctr = 0
         self.curr_problem = None
 
+        self.global_in_size = global_in_size
+        self.vertex_in_size = vertex_in_size
+        self.edge_in_size = edge_in_size
         self.max_clause_len = 0
 
     def parse_state_as_graph(self):
