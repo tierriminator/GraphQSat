@@ -248,6 +248,7 @@ class EncoderCoreDecoder(SatModel):
         hidden_size=64,
         activation=ReLU,
         independent_block_layers=1,
+        layer_norm=True
     ):
         super().__init__(save_name)
         # all dims are tuples with (v,e) feature sizes
@@ -257,7 +258,7 @@ class EncoderCoreDecoder(SatModel):
         self.core_out_dims = core_out_dims
         self.dec_out_dims = dec_out_dims
 
-        self.layer_norm = True
+        self.layer_norm = layer_norm
 
         self.encoder = None
         if encoder_out_dims is not None:
