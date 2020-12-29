@@ -55,7 +55,7 @@ class gym_sat_Env(gym.Env):
         max_data_limit_per_set=None,
     ):
 
-        self.problems_paths = [realpath(el) for el in problems_paths.split(":")]
+        self.problems_paths = [realpath(el) for el in problems_paths.split(":")] if problems_paths is not None else []
         self.args = args
         self.test_mode = test_mode
 
