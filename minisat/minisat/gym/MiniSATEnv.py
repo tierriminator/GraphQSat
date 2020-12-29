@@ -41,6 +41,10 @@ VAR_ID_IDX = (
     0  # put 1 at the position of this index to indicate that the node is a variable
 )
 
+global_in_size = 1
+vertex_in_size = 2
+edge_in_size = 2
+
 
 class gym_sat_Env(gym.Env):
     def __init__(
@@ -97,9 +101,6 @@ class gym_sat_Env(gym.Env):
         self.step_ctr = 0
         self.curr_problem = None
 
-        self.global_in_size = 1
-        self.vertex_in_size = 2
-        self.edge_in_size = 2
         self.max_clause_len = 0
 
     def parse_state_as_graph(self):
@@ -188,7 +189,7 @@ class gym_sat_Env(gym.Env):
             clause_counter += 1
 
         vertex_data = np.zeros(
-            (num_var + clause_counter, self.vertex_in_size), dtype=np.float32
+            (num_var + clause_counter, vertex_in_size), dtype=np.float32
         )  # both vars and clauses are vertex in the graph
         vertex_data[:num_var, VAR_ID_IDX] = 1
         vertex_data[num_var:, VAR_ID_IDX + 1] = 1
@@ -198,7 +199,7 @@ class gym_sat_Env(gym.Env):
                 vertex_data,
                 edge_data,
                 connectivity,
-                np.zeros((1, self.global_in_size), dtype=np.float32),
+                np.zeros((1, global_in_size), dtype=np.float32),
             ),
             False,
         )
@@ -330,17 +331,17 @@ class gym_sat_Env(gym.Env):
             return no_restart_steps / steps
 
     def get_dummy_state(self):
-        DUMMY_V = np.zeros((2, self.vertex_in_size), dtype=np.float32)
+        DUMMY_V = np.zeros((2, vertex_in_size), dtype=np.float32)
         DUMMY_V[:, VAR_ID_IDX] = 1
         DUMMY_STATE = (
             DUMMY_V,
-            np.zeros((2, self.edge_in_size), dtype=np.float32),
+            np.zeros((2, edge_in_size), dtype=np.float32),
             np.eye(2, dtype=np.long),
-            np.zeros((1, self.global_in_size), dtype=np.float32),
+            np.zeros((1, global_in_size), dtype=np.float32),
         )
         return (
             DUMMY_STATE[0],
             DUMMY_STATE[1],
             DUMMY_STATE[2],
-            np.zeros((1, self.global_in_size), dtype=np.float32),
+            np.zeros((1, global_in_size), dtype=np.float32),
         )
