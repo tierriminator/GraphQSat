@@ -37,8 +37,7 @@ class GymSolver {
 	SimpSolver S;
 
 public:
-	GymSolver(char*, bool, int);
-	GymSolver(int* adj_mat, int cla_cnt, int var_cnt, bool with_restarts, int max_decision_cap);
+	GymSolver(char* satProb, int* adj_mat, int cla_cnt, int var_cnt, bool in_memory, bool with_restarts, int max_decision_cap);
 	void step(int); 
 	double getReward();
 	bool getDone();

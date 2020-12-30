@@ -233,10 +233,10 @@ class gym_sat_Env(gym.Env):
             self.curr_problem = "in_Memory"
             problem_adj_mat: np.ndarray = self.problem_list[random.randrange(len(self.problem_list))]
             clauses, variables = problem_adj_mat.shape
-            self.S = GymSolver(problem_adj_mat, clauses, variables, self.with_restarts, max_decisions_cap)
+            self.S = GymSolver("", problem_adj_mat, True, self.with_restarts, max_decisions_cap)
         else:
             self.curr_problem = self.random_pick_satProb()
-            self.S = GymSolver(self.curr_problem, self.with_restarts, max_decisions_cap)
+            self.S = GymSolver(self.curr_problem, np.array(np.zeros(1, 1),dtype=np.intc), False, self.with_restarts, max_decisions_cap)
         self.max_clause_len = 0
 
         self.curr_state, self.isSolved = self.parse_state_as_graph()

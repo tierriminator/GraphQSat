@@ -444,7 +444,7 @@ class DQN(object):
                 while eval_env.test_to != 0 or pr == 0:
 
                     obs = eval_env.reset(
-                        max_decisions_cap = self.args.test_time_max_decisions_allowed
+                        max_decisions_cap=self.args.test_time_max_decisions_allowed
                     )
                     q = self.eval_q_from_graph([obs], agg)
 
@@ -468,8 +468,8 @@ class DQN(object):
         # This will however not do any simplifications by MiniSat for our problem.
         # TODO: Use MiniSat for initial simplification of the problem, as done in GQSAT
 
-        env = make_env(None, [adj_mat], self.args)
-        hist_buffer = [env.reset()]
+        env = make_env(None, self.args, [adj_mat])
+        hist_buffer = [env.reset(self.args.train_time_max_decisions_allowed)]
 
         q = self.agent.forward(hist_buffer)
         if agg == "sum":

@@ -65,8 +65,8 @@ class GymSolver(object):
     thisown = property(lambda x: x.this.own(), lambda x, v: x.this.own(v), doc="The membership flag")
     __repr__ = _swig_repr
 
-    def __init__(self, *args):
-        _GymSolver.GymSolver_swiginit(self, _GymSolver.new_GymSolver(*args))
+    def __init__(self, satProb, adj_mat, in_memory, with_restarts, max_decision_cap):
+        _GymSolver.GymSolver_swiginit(self, _GymSolver.new_GymSolver(satProb, adj_mat, in_memory, with_restarts, max_decision_cap))
 
     def step(self, arg2):
         return _GymSolver.GymSolver_step(self, arg2)

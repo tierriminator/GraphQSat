@@ -23,7 +23,7 @@ Run `make && make python-wrap` in the minisat folder.
 
 ## How to build swig code (if you changed minisat-python interface, e.g. in GymSolver.i)
 
-Go to minisat/minisat/gym, run `swig -fastdispatch -c++ -python3 GymSolver.i` and then repeat the building procedure from the previous step.
+Go to minisat/minisat/gym, run `swig -fastdispatch -c++ -python minisat/gym/GymSolver.i` and then repeat the building procedure from the previous step.
 
 ## Individual Contributor License Agreement
 

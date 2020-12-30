@@ -36,57 +36,45 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 using namespace Minisat;
 
 // Graph-Q-SAT UPD: Add additional parameters for the environment generation.
-GymSolver::GymSolver(char* satProb, bool with_restarts, int max_decision_cap) {
+GymSolver::GymSolver(char* satProb, int* adj_mat, int cla_cnt, int var_cnt, bool in_memory, bool with_restarts, int max_decision_cap) {
 	IntOption    verb   ("MAIN", "verb",   "Verbosity level (0=silent, 1=some, 2=more).", 0, IntRange(0, 2));
 	S.verbosity = verb;
 	S.with_restarts = with_restarts;
     S.max_decision_cap = max_decision_cap;
-	gzFile in = gzopen(satProb, "rb");
-    if (in == NULL) {
-    	printf("ERROR! Could not open file: %s\n", satProb); 
-    	exit(1);
-    }
-    parse_DIMACS(in, S, true);
-    gzclose(in);
+
+	if(in_memory){
+        // parse SAT problem from adjacency matrix
+        vec<Lit> lits;
+        int var_sign = 0;
+        for(int cla = 0; cla < cla_cnt; ++cla){
+            lits.clear();
+            for(int var = 0; var < var_cnt; ++var) {
+                if (adj_mat[var + cla * var_cnt] != 0) {
+                    var_sign = adj_mat[var + cla * var_cnt];
+                    lits.push((var_sign > 0) ? mkLit(var) : ~mkLit(var));
+                }
+            }
+            if(lits.size() > 0) {
+                S.addClause_(lits);
+            }
+
+        }
+	}
+	else{
+	    gzFile in = gzopen(satProb, "rb");
+        if (in == NULL) {
+            printf("ERROR! Could not open file: %s\n", satProb);
+            exit(1);
+        }
+        parse_DIMACS(in, S, true);
+        gzclose(in);
+	}
 
     S.eliminate(true);
     if (!S.okay()){
     	printf("ERROR! SAT problem from file: %s is UNSAT by simplification\n", satProb);
     	exit(1);
     }    
-    
-    // Comments by Fei: Now the solveLimited() function really just initialize the problem. It needs steps to finish up!
-    vec<Lit> dummy;
-    S.solveLimited(dummy);
-
-}
-
-// Overload constructor to pass a problem in memory instead of via a file path
-GymSolver::GymSolver(int* adj_mat, int cla_cnt, int var_cnt, bool with_restarts, int max_decision_cap){
-	IntOption    verb   ("MAIN", "verb",   "Verbosity level (0=silent, 1=some, 2=more).", 0, IntRange(0, 2));
-	S.verbosity = verb;
-	S.with_restarts = with_restarts;
-    S.max_decision_cap = max_decision_cap;
-
-    // parse SAT problem from adjacency matrix
-    vec<Lit> lits;
-    int var_sign = 0;
-    for(int cla = 0; cla < cla_cnt; ++cla){
-        lits.clear();
-        for(int var = 0; var < var_cnt; ++var){
-            if(adj_mat[var + cla * var_cnt] != 0){
-                var_sign = adj_mat[var + cla * var_cnt];
-                lits.push( (var_sign > 0) ? mkLit(var) : ~mkLit(var) );
-            }
-        }
-        S.addClause_(lits);
-    }
-
-    S.eliminate(true);
-    if (!S.okay()){
-    	printf("ERROR! SAT problem from adjacency matrix is UNSAT by simplification\n");
-    	exit(1);
-    }
 
     // Comments by Fei: Now the solveLimited() function really just initialize the problem. It needs steps to finish up!
     vec<Lit> dummy;
