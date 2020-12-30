@@ -51,7 +51,7 @@ class gym_sat_Env(gym.Env):
         self,
         problems_paths,
         args,
-        problems_list=[],
+        problems_list: [np.ndarray] = None,
         test_mode=False,
         max_cap_fill_buffer=True,
         penalty_size=None,
@@ -60,8 +60,8 @@ class gym_sat_Env(gym.Env):
         max_data_limit_per_set=None,
     ):
 
-        self.problems_paths = [realpath(el) for el in problems_paths.split(":")] if problems_paths is not None else []
         self.problem_list = problems_list
+        self.problems_paths = [realpath(el) for el in problems_paths.split(":")] if problems_paths is not None else []
         self.args = args
         self.test_mode = test_mode
 
@@ -107,6 +107,9 @@ class gym_sat_Env(gym.Env):
         self.vertex_in_size = vertex_in_size
         self.edge_in_size = edge_in_size
         self.max_clause_len = 0
+        self.S = None
+        self.curr_state = None
+        self.isSolved = None
 
     def parse_state_as_graph(self):
 
@@ -225,8 +228,15 @@ class gym_sat_Env(gym.Env):
         if max_decisions_cap is None:
             max_decisions_cap = sys.maxsize
         self.max_decisions_cap = max_decisions_cap
-        self.curr_problem = self.random_pick_satProb()
-        self.S = GymSolver(self.curr_problem, self.with_restarts, max_decisions_cap)
+
+        if self.problem_list is not None:
+            self.curr_problem = "in_Memory"
+            problem_adj_mat: np.ndarray = self.problem_list[random.randrange(len(self.problem_list))]
+            clauses, variables = problem_adj_mat.shape
+            self.S = GymSolver(problem_adj_mat, clauses, variables, self.with_restarts, max_decisions_cap)
+        else:
+            self.curr_problem = self.random_pick_satProb()
+            self.S = GymSolver(self.curr_problem, self.with_restarts, max_decisions_cap)
         self.max_clause_len = 0
 
         self.curr_state, self.isSolved = self.parse_state_as_graph()

@@ -105,7 +105,7 @@ class DQN(object):
     (2) Q-value evaluation for the problems from directory happens in eval_q_from_file()
     (3) Q-value evaluation for the given graph happens in eval_q_from_graph
     """
-    def __init__(self, args, train_status = None, eval = False):
+    def __init__(self, args, train_status=None, eval=False):
         self.writer = SummaryWriter()
         
         if train_status is not None:
@@ -408,7 +408,7 @@ class DQN(object):
                 f"median_relative_score: {np.nanmedian(res_list)}, mean_relative_score: {np.mean(res_list)}"
             )
 
-    def eval_q_from_file(self, eval_problems_paths = None, agg = "sum"):
+    def eval_q_from_file(self, eval_problems_paths=None, agg="sum"):
         """
         Q-value evaluation of problems in eval_problems_paths.
         If eval_problems_paths is None, evaluation will happen in args.eval_problems_paths
@@ -452,7 +452,7 @@ class DQN(object):
         
         return res_q
 
-    def eval_q_from_graph(self, hist_buffer, agg = "sum"):
+    def eval_q_from_graph(self, adj_mat, agg="sum"):
         """
         Evaluation of q-value from the graph structure. This function directly calls forward pass for the agent.
         :param hist_buffer: list of size 1 with all elements for graph (vertex_data, edge_data, connectivity, global_data)
@@ -463,6 +463,9 @@ class DQN(object):
         # For now we use the agent to get the q-values of the solver.
         # This will however not do any simplifications by MiniSat for our problem.
         # TODO: Use MiniSat for initial simplification of the problem, as done in GQSAT
+
+
+
         q = self.agent.forward(hist_buffer)
         if agg == "sum":
             q = q.max(1).values.sum().cpu().item()
