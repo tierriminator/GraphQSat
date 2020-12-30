@@ -57,12 +57,12 @@ class SatModel(torch.nn.Module):
             self.save_to_yaml(save_name)
 
     @classmethod
-    def save_to_yaml(cls, model_name):
+    def save_to_yaml(self, model_name):
         # -2 is here because I want to know how many layers below lies the final child and get its init params.
         # I do not need nn.Module and 'object'
         # this WILL NOT work with multiple inheritance of the leaf children
         frame, filename, line_number, function_name, lines, index = inspect.stack()[
-            len(cls.mro()) - 2
+            len(self.mro()) - 2
         ]
         args, _, _, values = inspect.getargvalues(frame)
 
