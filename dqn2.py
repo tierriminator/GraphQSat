@@ -107,7 +107,8 @@ class DQN(object):
     """
     def __init__(self, args, train_status=None, eval=False):
         self.writer = SummaryWriter()
-        
+        self.env = None
+
         if train_status is not None:
             if not eval:
                 self._init_from_status(args, train_status)
@@ -267,6 +268,9 @@ class DQN(object):
         self.agent.net.eval()
 
         self.args = args
+
+    def set_problems(self, adj_mat_list):
+        self.env = make_env(None, adj_mat_list, self.args)
 
     def train(self):
         """
@@ -464,7 +468,8 @@ class DQN(object):
         # This will however not do any simplifications by MiniSat for our problem.
         # TODO: Use MiniSat for initial simplification of the problem, as done in GQSAT
 
-
+        env = make_env(None, [adj_mat], self.args)
+        hist_buffer = [env.reset()]
 
         q = self.agent.forward(hist_buffer)
         if agg == "sum":
