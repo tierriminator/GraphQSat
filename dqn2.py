@@ -469,9 +469,11 @@ class DQN(object):
         # TODO: Use MiniSat for initial simplification of the problem, as done in GQSAT
 
         env = make_env(None, self.args, [adj_mat])
-        hist_buffer = [env.reset(self.args.train_time_max_decisions_allowed)]
+        obs = env.reset(self.args.train_time_max_decisions_allowed)
+        if env.isSolved:
+            return 0
 
-        q = self.agent.forward(hist_buffer)
+        q = self.agent.forward([obs])
         if agg == "sum":
             q = q.max(1).values.sum().cpu().item()
         elif agg == "mean":
