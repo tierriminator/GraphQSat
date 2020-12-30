@@ -456,7 +456,7 @@ class DQN(object):
         
         return res_q
 
-    def eval_q_from_graph(self, adj_mat, agg="sum"):
+    def eval_q_from_graph(self, adj_mat, agg="max"):
         """
         Evaluation of q-value from the graph structure. This function directly calls forward pass for the agent.
         :param hist_buffer: list of size 1 with all elements for graph (vertex_data, edge_data, connectivity, global_data)
@@ -464,9 +464,6 @@ class DQN(object):
 
         :returns q: q-value for a given graph
         """
-        # For now we use the agent to get the q-values of the solver.
-        # This will however not do any simplifications by MiniSat for our problem.
-        # TODO: Use MiniSat for initial simplification of the problem, as done in GQSAT
 
         env = make_env(None, self.args, [adj_mat])
         obs = env.reset(self.args.train_time_max_decisions_allowed)
