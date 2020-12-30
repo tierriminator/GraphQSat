@@ -73,7 +73,7 @@ GymSolver::GymSolver(char* satProb, int* adj_mat, int cla_cnt, int var_cnt, bool
 
     S.eliminate(true);
     if (!S.okay()){
-    	printf("ERROR! SAT problem from file: %s is UNSAT by simplification\n", satProb);
+    	//printf("ERROR! SAT problem from file: %s is UNSAT by simplification\n", satProb);
     	//exit(1);
     }    
 
