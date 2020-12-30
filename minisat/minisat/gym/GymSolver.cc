@@ -52,12 +52,13 @@ GymSolver::GymSolver(char* satProb, int* adj_mat, int cla_cnt, int var_cnt, bool
                 if (adj_mat[var + cla * var_cnt] != 0) {
                     var_sign = adj_mat[var + cla * var_cnt];
                     lits.push((var_sign > 0) ? mkLit(var) : ~mkLit(var));
+                    // add needed variables to solver
+                    while (var >= S.nVars()) S.newVar();
                 }
             }
             if(lits.size() > 0) {
                 S.addClause_(lits);
             }
-
         }
 	}
 	else{
@@ -73,7 +74,7 @@ GymSolver::GymSolver(char* satProb, int* adj_mat, int cla_cnt, int var_cnt, bool
     S.eliminate(true);
     if (!S.okay()){
     	printf("ERROR! SAT problem from file: %s is UNSAT by simplification\n", satProb);
-    	exit(1);
+    	//exit(1);
     }    
 
     // Comments by Fei: Now the solveLimited() function really just initialize the problem. It needs steps to finish up!

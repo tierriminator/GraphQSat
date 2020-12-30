@@ -270,7 +270,7 @@ class DQN(object):
         self.args = args
 
     def set_problems(self, adj_mat_list):
-        self.env = make_env(None, adj_mat_list, self.args)
+        self.env = make_env(None, self.args, adj_mat_list)
 
     def train(self):
         """
