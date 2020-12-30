@@ -50,6 +50,18 @@ should potentially be faster
         PyList_SetItem($result, i, curr_clause);
     }
 %}
+
+// to solve a problem given an adjacency matrix
+%{
+#define SWIG_FILE_WITH_INIT
+%}
+%include "numpy.i"
+%init %{
+import_array();
+%}
+
+%apply (int IN_ARRAY2, int DIM1, int DIM2) {(int* adj_mat, int cla_cnt, int var_cnt)};
+
 // end of Graph-Q-SAT UPD.
 %include "GymSolver.h"
 

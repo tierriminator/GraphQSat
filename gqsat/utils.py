@@ -432,7 +432,7 @@ def batch_graphs(graphs, device):
 import gym, minisat
 
 
-def make_env(problems_paths, args, test_mode=False):
+def make_env(problems_paths, args, problems_list=[], test_mode=False):
     max_data_limit_per_set = None
     if test_mode and hasattr(args, "test_max_data_limit_per_set"):
         max_data_limit_per_set = args.test_max_data_limit_per_set

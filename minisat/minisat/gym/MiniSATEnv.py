@@ -51,6 +51,7 @@ class gym_sat_Env(gym.Env):
         self,
         problems_paths,
         args,
+        problems_list=[],
         test_mode=False,
         max_cap_fill_buffer=True,
         penalty_size=None,
@@ -60,6 +61,7 @@ class gym_sat_Env(gym.Env):
     ):
 
         self.problems_paths = [realpath(el) for el in problems_paths.split(":")] if problems_paths is not None else []
+        self.problem_list = problems_list
         self.args = args
         self.test_mode = test_mode
 

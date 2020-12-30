@@ -61,6 +61,39 @@ GymSolver::GymSolver(char* satProb, bool with_restarts, int max_decision_cap) {
 
 }
 
+// Overload constructor to pass a problem in memory instead of via a file path
+GymSolver::GymSolver(int* adj_mat, int cla_cnt, int var_cnt, bool with_restarts, int max_decision_cap){
+	IntOption    verb   ("MAIN", "verb",   "Verbosity level (0=silent, 1=some, 2=more).", 0, IntRange(0, 2));
+	S.verbosity = verb;
+	S.with_restarts = with_restarts;
+    S.max_decision_cap = max_decision_cap;
+
+    // parse SAT problem from adjacency matrix
+    vec<Lit> lits;
+    int var_sign = 0;
+    for(int cla = 0; cla < cla_cnt; ++cla){
+        lits.clear();
+        for(int var = 0; var < var_cnt; ++var){
+            if(adj_mat[var + cla * var_cnt] != 0){
+                var_sign = adj_mat[var + cla * var_cnt];
+                lits.push( (var_sign > 0) ? mkLit(var) : ~mkLit(var) );
+            }
+        }
+        S.addClause_(lits);
+    }
+
+    S.eliminate(true);
+    if (!S.okay()){
+    	printf("ERROR! SAT problem from adjacency matrix is UNSAT by simplification\n");
+    	exit(1);
+    }
+
+    // Comments by Fei: Now the solveLimited() function really just initialize the problem. It needs steps to finish up!
+    vec<Lit> dummy;
+    S.solveLimited(dummy);
+
+}
+
 void GymSolver::step(int decision) {
     if (decision == 32767) {
         S.agent_decision = S.default_pickLit(); // if the decision is MaxInt number, let the minisat decide!
@@ -94,3 +127,5 @@ std::vector<std::vector<int> >* GymSolver::getClauses() {
 std::vector<double>* GymSolver::getActivities() {
     return &S.env_state_activities;
 }
+
+
