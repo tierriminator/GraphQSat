@@ -11,19 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import argparse
 import os
 import gym, minisat  # you need the latter to run __init__.py and register the environment.
 from collections import defaultdict
 from gqsat.utils import build_argparser
 from gqsat.agents import MiniSATAgent
 
+from os import path
+
 DEBUG_ROLLOUTS = 10  # if --debug flag is present, run this many of rollouts, not the whole problem folder
 
 
-def main():
-    parser = build_argparser()
-    args = parser.parse_args()
+def add_metadata(args):
+
     # key is the name of the problem file, value is a list with two values [minisat_steps_no_restarts, minisat_steps_with_restarts]
     results = defaultdict(list)
 
@@ -55,10 +56,26 @@ def main():
     return results, args
 
 
-from os import path
+# needed to create METADATA for evaluation during an execution
+def create_metadata(args):
+
+    results, args = add_metadata(args)
+    for pdir in args.eval_problems_paths.split(":"):
+        with open(os.path.join(pdir, "METADATA"), "w") as f:
+            for el in sorted(results.keys()):
+                cur_dir, pname = path.split(el)
+                if path.realpath(pdir) == path.realpath(cur_dir):
+                    # no restarts/with restarts
+                    f.write(f"{pname},{results[el][0]},{results[el][1]}\n")
+
 
 if __name__ == "__main__":
-    results, args = main()
+
+    # parse args
+    parser = build_argparser()
+    args = parser.parse_args()
+
+    results, args = add_metadata(args)
     for pdir in args.eval_problems_paths.split(":"):
         with open(os.path.join(pdir, "METADATA"), "w") as f:
             for el in sorted(results.keys()):
