@@ -330,7 +330,7 @@ class DQN(object):
                     if (
                         self.args.env_name == "sat-v0" and not self.learner.step_ctr % self.args.eval_freq
                     ) or self.eval_resume_signal:
-                        scores, _, self.eval_resume_signal = evaluate(
+                        _, _, scores, _, self.eval_resume_signal = evaluate(
                             self.agent, self.args, include_train_set=False
                         )
 
@@ -395,7 +395,7 @@ class DQN(object):
         :param args: arguments for evaluation
         """
         st_time = time.time()
-        scores, eval_metadata, _ = evaluate(self.agent, self.args)
+        _, _, scores, eval_metadata, _ = evaluate(self.agent, self.args)
         end_time = time.time()
 
         print(

@@ -268,7 +268,7 @@ if __name__ == "__main__":
                 if (
                     args.env_name == "sat-v0" and not learner.step_ctr % args.eval_freq
                 ) or eval_resume_signal:
-                    scores, _, eval_resume_signal = evaluate(
+                    _, _, scores, _, eval_resume_signal = evaluate(
                         agent, args, include_train_set=False
                     )
 

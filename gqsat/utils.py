@@ -456,6 +456,8 @@ def make_env(problems_paths, args, problems_list=None, test_mode=False):
 
 def evaluate(agent, args, include_train_set=False):
     agent.net.eval()
+
+    # get all problem sets aka problem directories
     problem_sets = (
         [args.eval_problems_paths]
         if not args.eval_separately_on_each
@@ -468,7 +470,10 @@ def evaluate(agent, args, include_train_set=False):
             else [k for k in args.train_problems_paths.split(":")]
         )
 
+    # initialize dicts to return
     res = {}
+    iters_minisat = {}
+    iters_ours = {}
 
     st_time = time.time()
     print("Starting evaluation. Fasten your seat belts!")
@@ -476,13 +481,20 @@ def evaluate(agent, args, include_train_set=False):
     total_iters_ours = 0
     total_iters_minisat = 0
 
+    # iterate over all problem sets aka directories that contain problems
     for pset in problem_sets:
         eval_env = make_env(pset, args, test_mode=True)
         DEBUG_ROLLOUTS = None
         pr = 0
+
+        # initialize dicts for all problems in one problem set to save in the dict we want to return in the end
         walltime = {}
+        curr_iters_minisat = {}
+        curr_iters_ours = {}
         scores = {}
         with torch.no_grad():
+
+            # iterate over problems in one problem set
             while eval_env.test_to != 0 or pr == 0:
                 p_st_time = time.time()
                 obs = eval_env.reset(
@@ -490,6 +502,7 @@ def evaluate(agent, args, include_train_set=False):
                 )
                 done = eval_env.isSolved
 
+                # solve problem using our model that we want to evaluate
                 while not done:
                     # if time.time() - st_time > args.eval_time_limit:
                     #     print(
@@ -501,15 +514,20 @@ def evaluate(agent, args, include_train_set=False):
                     obs, _, done, _ = eval_env.step(action)
 
                 walltime[eval_env.curr_problem] = time.time() - p_st_time
-                print(
-                    f"It took {walltime[eval_env.curr_problem]} seconds to solve a problem."
-                )
+                print(f"It took {walltime[eval_env.curr_problem]} seconds to solve a problem.")
+
+                # calculate interesting metrics and save them
                 sctr = 1 if eval_env.step_ctr == 0 else eval_env.step_ctr
                 ns = eval_env.normalized_score(sctr, eval_env.curr_problem)
                 print(f"Evaluation episode {pr+1} is over. Your score is {ns}.")
                 total_iters_ours += sctr
                 pdir, pname = os.path.split(eval_env.curr_problem)
-                total_iters_minisat += eval_env.metadata[pdir][pname][1]
+
+                # get iterations for this problem
+                curr_iters_minisat[eval_env.curr_problem] = eval_env.metadata[pdir][pname][1]
+                curr_iters_ours[eval_env.curr_problem] = eval_env.step_ctr
+
+                total_iters_minisat += curr_iters_minisat[eval_env.curr_problem]
                 scores[eval_env.curr_problem] = ns
                 pr += 1
                 if DEBUG_ROLLOUTS is not None and pr >= DEBUG_ROLLOUTS:
@@ -517,33 +535,24 @@ def evaluate(agent, args, include_train_set=False):
         print(
             f"Evaluation is done. Median relative score: {np.nanmedian([el for el in scores.values()]):.2f}, "
             f"mean relative score: {np.mean([el for el in scores.values()]):.2f}, "
-            f"iters frac: {total_iters_minisat/total_iters_ours:.2f}, "
-            f"iters minisat: {total_iters_minisat}, "
-            f"iters ours: {total_iters_ours}"
+            f"iters frac: {total_iters_minisat/total_iters_ours:.2f}"
         )
-        res[pset] = scores
 
-    if args.dump_timings_path:
-        target_fname = (
-            os.path.join(
-                args.dump_timings_path,
-                args.eval_problems_paths.replace("/", "_")
-                + f"_cap_{args.test_time_max_decisions_allowed}",
-            )
-            + ".pkl"
-        )
-        with open(target_fname, "wb") as f:
-            pickle.dump(walltime, f)
+        # save results for current problem set
+        res[pset] = scores
+        iters_minisat[pset] = curr_iters_minisat
+        iters_ours[pset] = curr_iters_ours
+
     agent.net.train()
     return (
+        iters_minisat,
+        iters_ours,
         res,
         {
             "metadata": eval_env.metadata,
-            "iter_minisat": total_iters_minisat,
-            "iter_ours": total_iters_ours,
             "iters_frac": total_iters_minisat / total_iters_ours,
             "mean_score": np.mean([el for el in scores.values()]),
             "median_score": np.median([el for el in scores.values()]),
         },
-        False,
+        False
     )
