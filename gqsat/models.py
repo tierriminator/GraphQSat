@@ -78,7 +78,7 @@ class SatModel(torch.nn.Module):
     @staticmethod
     def load_from_yaml(fname):
         with open(fname, "r") as f:
-            res = yaml.load(f)
+            res = yaml.load(f, Loader=yaml.Loader)
         return getattr(sys.modules[__name__], res["class_name"])(**res["call_args"])
 
 
