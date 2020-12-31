@@ -517,7 +517,9 @@ def evaluate(agent, args, include_train_set=False):
         print(
             f"Evaluation is done. Median relative score: {np.nanmedian([el for el in scores.values()]):.2f}, "
             f"mean relative score: {np.mean([el for el in scores.values()]):.2f}, "
-            f"iters frac: {total_iters_minisat/total_iters_ours:.2f}"
+            f"iters frac: {total_iters_minisat/total_iters_ours:.2f}, "
+            f"iters minisat: {total_iters_minisat}, "
+            f"iters ours: {total_iters_ours}"
         )
         res[pset] = scores
 
@@ -537,6 +539,8 @@ def evaluate(agent, args, include_train_set=False):
         res,
         {
             "metadata": eval_env.metadata,
+            "iter_minisat": total_iters_minisat,
+            "iter_ours": total_iters_ours,
             "iters_frac": total_iters_minisat / total_iters_ours,
             "mean_score": np.mean([el for el in scores.values()]),
             "median_score": np.median([el for el in scores.values()]),
