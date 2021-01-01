@@ -36,10 +36,10 @@ class ModifiedMetaLayer(MetaLayer):
     def forward(
         self, x, edge_index, edge_attr=None, u=None, v_indices=None, e_indices=None
     ):
-        row, col = edge_index
+        tgt, src = edge_index
 
         if self.edge_model is not None:
-            edge_attr = self.edge_model(x[row], x[col], edge_attr, u, e_indices)
+            edge_attr = self.edge_model(x[tgt], x[src], edge_attr, u, e_indices)
 
         if self.node_model is not None:
             x = self.node_model(x, edge_index, edge_attr, u, v_indices)
@@ -204,11 +204,11 @@ class GraphNet(SatModel):
             if self.independent:
                 return self.node_mlp(x)
 
-            row, col = edge_index  # Warning: Row must be the edge target here, not the source.
+            tgt, src = edge_index  # Warning: Row must be the edge target here, not the source.
             if self.e2v_agg == "sum":
-                out = scatter_add(edge_attr, row, dim=0, dim_size=x.size(0))
+                out = scatter_add(edge_attr, tgt, dim=0, dim_size=x.size(0))
             elif self.e2v_agg == "mean":
-                out = scatter_mean(edge_attr, row, dim=0, dim_size=x.size(0))
+                out = scatter_mean(edge_attr, tgt, dim=0, dim_size=x.size(0))
             out = torch.cat([x, out, u[v_indices]], dim=1)
             return self.node_mlp(out)
 
