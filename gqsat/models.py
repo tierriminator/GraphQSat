@@ -204,7 +204,7 @@ class GraphNet(SatModel):
             if self.independent:
                 return self.node_mlp(x)
 
-            row, col = edge_index
+            row, col = edge_index  # Warning: Row must be the edge target here, not the source.
             if self.e2v_agg == "sum":
                 out = scatter_add(edge_attr, row, dim=0, dim_size=x.size(0))
             elif self.e2v_agg == "mean":
@@ -288,6 +288,7 @@ class EncoderCoreDecoder(SatModel):
             layer_norm=self.layer_norm,
         )
 
+        self.decoder = None
         if dec_out_dims is not None:
             self.decoder = GraphNet(
                 core_out_dims,
