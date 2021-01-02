@@ -51,10 +51,10 @@ def eval_runtime(eval_args):
     dqn = DQN(eval_args, train_status, True)
     
     # evaluate run-time
-    dqn.eval_all()
+    dqn.eval_runtime()
 
     # evaluate q-values
-    print(dqn.eval_q_from_file(agg = "mean"))
+    # print(dqn.eval_q_from_file(agg = "mean"))
 
 
 
@@ -88,5 +88,5 @@ if __name__ == "__main__":
         eval_args, others = eval_parser.parse_known_args()
 
         # evaluation
-        eval(eval_args)
+        eval_runtime(eval_args)
         

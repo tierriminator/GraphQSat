@@ -85,7 +85,7 @@ SOMAJOR=2
 SOMINOR=1
 SORELEASE?=.0#   Declare empty to leave out from library file name.
 
-MINISAT_CXXFLAGS = -I. -D __STDC_LIMIT_MACROS -D __STDC_FORMAT_MACROS -Wall -Wno-parentheses -Wextra
+MINISAT_CXXFLAGS = -I. -D __STDC_LIMIT_MACROS -D __STDC_FORMAT_MACROS -Wall -Wno-parentheses -Wextra -L /cluster/home/aunagar/software/glibc2.29/lib -I $HOME/software/glibc2.29/lib -Wl,--rpath=$HOME/software/glibc2.29/lib -Wl,--dynamic-linker=$HOME/software/glibc2.29/lib/ld-linux-x86-64.so.2
 MINISAT_LDFLAGS  = -Wall -lz
 
 ECHO=@echo
@@ -167,15 +167,16 @@ $(BUILD_DIR)/debug/%.o:	%.cc
 $(BUILD_DIR)/dynamic/%.o:	%.cc
 	$(ECHO) Compiling: $@
 	$(VERB) mkdir -p $(dir $@)
-	$(VERB) $(CXX) $(MINISAT_CXXFLAGS) $(CXXFLAGS) -c -o $@ $< -MMD -MF $(BUILD_DIR)/dynamic/$*.d
+	$(VERB) $(CXX) $(MINISAT_CXXFLAGS) $(CXXFLAGS) -c -o $@ $< -MMD -MF $(BUILD_DIR)/dynamic/$*.d 
 
 ## Linking rule
 $(BUILD_DIR)/release/bin/$(MINISAT) $(BUILD_DIR)/debug/bin/$(MINISAT) $(BUILD_DIR)/profile/bin/$(MINISAT) $(BUILD_DIR)/dynamic/bin/$(MINISAT)\
 $(BUILD_DIR)/release/bin/$(MINISAT_CORE) $(BUILD_DIR)/debug/bin/$(MINISAT_CORE) $(BUILD_DIR)/profile/bin/$(MINISAT_CORE) $(BUILD_DIR)/dynamic/bin/$(MINISAT_CORE):
 	$(ECHO) Linking Binary: $@
 	$(VERB) mkdir -p $(dir $@)
-	$(VERB) $(CXX) $^ $(MINISAT_LDFLAGS) $(LDFLAGS) -o $@
-
+	$(ECHO) Error is not here!
+	$(VERB) $(CXX) $^ $(MINISAT_LDFLAGS) $(LDFLAGS) -o $@ -L /cluster/home/aunagar/software/glibc2.29/lib -L/cluster/home/aunagar/software/zlib-1.2.11/lib -I $HOME/software/glibc2.29/lib -Wl,--rpath=$HOME/software/glibc2.29/lib -Wl,--dynamic-linker=$HOME/software/glibc2.29/lib/ld-linux-x86-64.so.2
+	$(ECHO) Error is here!
 ## Static Library rule
 %/lib/$(MINISAT_SLIB):
 	$(ECHO) Linking Static Library: $@
@@ -223,8 +224,8 @@ install-bin: $(BUILD_DIR)/dynamic/bin/$(MINISAT)
 
 python-wrap: $(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB).$(SOMAJOR).$(SOMINOR)$(SORELEASE) $(SRCS)
     # Graph-Q-SAT UPD: bump python version
-	g++ -O2 -fPIC -c minisat/gym/GymSolver_wrap.cxx -o minisat/gym/GymSolver_wrap.o -I. -I/usr/include/python3.8
-	g++ -shared -o minisat/gym/_GymSolver.so $(foreach o,$(OBJS),$(BUILD_DIR)/dynamic/$(o)) minisat/gym/GymSolver_wrap.o /usr/lib/x86_64-linux-gnu/libz.so
+	g++ -O2 -fPIC -c minisat/gym/GymSolver_wrap.cxx -o minisat/gym/GymSolver_wrap.o -I. -I/cluster/apps/python/3.7.4_gpu_gcc630/x86_64/include/python3.7m -I/cluster/home/aunagar/.local/lib/python3.7/site-packages/numpy/core/include
+	g++ -shared -o minisat/gym/_GymSolver.so $(foreach o,$(OBJS),$(BUILD_DIR)/dynamic/$(o)) minisat/gym/GymSolver_wrap.o /lib64/libz.so
 
 clean:
 	rm -f $(foreach t, release debug profile dynamic, $(foreach o, $(SRCS:.cc=.o), $(BUILD_DIR)/$t/$o)) \
