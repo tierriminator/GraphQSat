@@ -51,6 +51,14 @@ MINISAT_FPIC   ?= -fpic
 # GNU Standard Install Prefix
 prefix         ?= /usr/local
 
+# Compile against glibc in an installed location
+# Needed, because leonhard.ethz.ch supercomputer uses GLIBC 2.17
+SYSROOT = /home/friedrich/ETH/HS20
+DESTDIR = /home/friedrich/ETH/HS20/dl/code/GraphQSat/minisat
+CUSTOM_GLIBC_FLAGS = -L${SYSROOT}/lib64 \
+    -Wl,-rpath=${SYSROOT}/lib64 \
+    -Wl,--dynamic-linker=${SYSROOT}/lib64/ld-2.17.so
+
 ## Write Configuration  ###########################################################################
 
 config:
@@ -152,29 +160,29 @@ $(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB).$(SOMAJOR).$(SOMINOR)$(SORELEASE)\
 $(BUILD_DIR)/release/%.o:	%.cc
 	$(ECHO) Compiling: $@
 	$(VERB) mkdir -p $(dir $@)
-	$(VERB) $(CXX) $(MINISAT_CXXFLAGS) $(CXXFLAGS) -c -o $@ $< -MMD -MF $(BUILD_DIR)/release/$*.d
+	$(VERB) $(CXX) $(MINISAT_CXXFLAGS) $(CXXFLAGS) $(CUSTOM_GLIBC_FLAGS) -c -o $@ $< -MMD -MF $(BUILD_DIR)/release/$*.d
 
 $(BUILD_DIR)/profile/%.o:	%.cc
 	$(ECHO) Compiling: $@
 	$(VERB) mkdir -p $(dir $@)
-	$(VERB) $(CXX) $(MINISAT_CXXFLAGS) $(CXXFLAGS) -c -o $@ $< -MMD -MF $(BUILD_DIR)/profile/$*.d
+	$(VERB) $(CXX) $(MINISAT_CXXFLAGS) $(CXXFLAGS) $(CUSTOM_GLIBC_FLAGS) -c -o $@ $< -MMD -MF $(BUILD_DIR)/profile/$*.d
 
 $(BUILD_DIR)/debug/%.o:	%.cc
 	$(ECHO) Compiling: $@
 	$(VERB) mkdir -p $(dir $@)
-	$(VERB) $(CXX) $(MINISAT_CXXFLAGS) $(CXXFLAGS) -c -o $@ $< -MMD -MF $(BUILD_DIR)/debug/$*.d
+	$(VERB) $(CXX) $(MINISAT_CXXFLAGS) $(CXXFLAGS) $(CUSTOM_GLIBC_FLAGS) -c -o $@ $< -MMD -MF $(BUILD_DIR)/debug/$*.d
 
 $(BUILD_DIR)/dynamic/%.o:	%.cc
 	$(ECHO) Compiling: $@
 	$(VERB) mkdir -p $(dir $@)
-	$(VERB) $(CXX) $(MINISAT_CXXFLAGS) $(CXXFLAGS) -c -o $@ $< -MMD -MF $(BUILD_DIR)/dynamic/$*.d
+	$(VERB) $(CXX) $(MINISAT_CXXFLAGS) $(CXXFLAGS) $(CUSTOM_GLIBC_FLAGS) -c -o $@ $< -MMD -MF $(BUILD_DIR)/dynamic/$*.d
 
 ## Linking rule
 $(BUILD_DIR)/release/bin/$(MINISAT) $(BUILD_DIR)/debug/bin/$(MINISAT) $(BUILD_DIR)/profile/bin/$(MINISAT) $(BUILD_DIR)/dynamic/bin/$(MINISAT)\
 $(BUILD_DIR)/release/bin/$(MINISAT_CORE) $(BUILD_DIR)/debug/bin/$(MINISAT_CORE) $(BUILD_DIR)/profile/bin/$(MINISAT_CORE) $(BUILD_DIR)/dynamic/bin/$(MINISAT_CORE):
 	$(ECHO) Linking Binary: $@
 	$(VERB) mkdir -p $(dir $@)
-	$(VERB) $(CXX) $^ $(MINISAT_LDFLAGS) $(LDFLAGS) -o $@
+	$(VERB) $(CXX) $(CUSTOM_GLIBC_FLAGS) $^ $(MINISAT_LDFLAGS) $(LDFLAGS) -o $@
 
 ## Static Library rule
 %/lib/$(MINISAT_SLIB):
@@ -188,7 +196,7 @@ $(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB).$(SOMAJOR).$(SOMINOR)$(SORELEASE)\
  $(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB):
 	$(ECHO) Linking Shared Library: $@
 	$(VERB) mkdir -p $(dir $@)
-	$(VERB) $(CXX) $(MINISAT_LDFLAGS) $(LDFLAGS) -o $@ -shared -Wl,-soname,$(MINISAT_DLIB).$(SOMAJOR) $^
+	$(VERB) $(CXX) $(CUSTOM_GLIBC_FLAGS) $(MINISAT_LDFLAGS) $(LDFLAGS) -o $@ -shared -Wl,-soname,$(MINISAT_DLIB).$(SOMAJOR) $^
 	$(VERB) ln -sf $(MINISAT_DLIB).$(SOMAJOR).$(SOMINOR)$(SORELEASE) $(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB).$(SOMAJOR)
 	$(VERB) ln -sf $(MINISAT_DLIB).$(SOMAJOR) $(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB)
 
@@ -223,8 +231,8 @@ install-bin: $(BUILD_DIR)/dynamic/bin/$(MINISAT)
 
 python-wrap: $(BUILD_DIR)/dynamic/lib/$(MINISAT_DLIB).$(SOMAJOR).$(SOMINOR)$(SORELEASE) $(SRCS)
     # Graph-Q-SAT UPD: bump python version
-	g++ -O2 -fPIC -c minisat/gym/GymSolver_wrap.cxx -o minisat/gym/GymSolver_wrap.o -I. -I/usr/include/python3.8
-	g++ -shared -o minisat/gym/_GymSolver.so $(foreach o,$(OBJS),$(BUILD_DIR)/dynamic/$(o)) minisat/gym/GymSolver_wrap.o /usr/lib/x86_64-linux-gnu/libz.so
+	g++ $(CUSTOM_GLIBC_FLAGS) -O2 -fPIC -c minisat/gym/GymSolver_wrap.cxx -o minisat/gym/GymSolver_wrap.o -I. -I/usr/include/python3.8
+	g++ $(CUSTOM_GLIBC_FLAGS) -shared -o minisat/gym/_GymSolver.so $(foreach o,$(OBJS),$(BUILD_DIR)/dynamic/$(o)) minisat/gym/GymSolver_wrap.o /usr/lib/x86_64-linux-gnu/libz.so
 
 clean:
 	rm -f $(foreach t, release debug profile dynamic, $(foreach o, $(SRCS:.cc=.o), $(BUILD_DIR)/$t/$o)) \
