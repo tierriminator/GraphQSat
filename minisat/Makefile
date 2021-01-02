@@ -51,14 +51,6 @@ MINISAT_FPIC   ?= -fpic
 # GNU Standard Install Prefix
 prefix         ?= /usr/local
 
-# Compile against glibc in an installed location
-# Needed, because leonhard.ethz.ch supercomputer uses GLIBC 2.17
-SYSROOT = /home/friedrich/ETH/HS20
-DESTDIR = /home/friedrich/ETH/HS20/dl/code/GraphQSat/minisat
-CUSTOM_GLIBC_FLAGS = -L${SYSROOT}/lib64 \
-    -Wl,-rpath=${SYSROOT}/lib64 \
-    -Wl,--dynamic-linker=${SYSROOT}/lib64/ld-2.17.so
-
 ## Write Configuration  ###########################################################################
 
 config:
