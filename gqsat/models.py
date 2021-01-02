@@ -288,6 +288,7 @@ class EncoderCoreDecoder(SatModel):
             layer_norm=self.layer_norm,
         )
 
+        self.decoder = None
         if dec_out_dims is not None:
             self.decoder = GraphNet(
                 core_out_dims,
