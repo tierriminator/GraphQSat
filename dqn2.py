@@ -140,8 +140,11 @@ class DQN(object):
         target_net.load_state_dict(net.state_dict())
 
         # load the buffer
-        with open(train_status["buffer_path"], "rb") as f:
-            self.buffer = pickle.load(f)
+        if train_status["buffer_path"] is not None:
+            with open(train_status["buffer_path"], "rb") as f:
+                self.buffer = pickle.load(f)
+        else:
+            self.buffer = None
         self.learner = GraphLearner(net, target_net, self.buffer, args)
         self.learner.step_ctr = train_status["step_ctr"]
 
