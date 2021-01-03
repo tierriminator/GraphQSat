@@ -480,7 +480,7 @@ class DQN(object):
             done = env.isSolved
             q = 0
             while not done:
-                obs, r, done = env.step(agent.act(obs))
+                obs, r, done, _ = env.step(agent.act(obs))
                 q += r
             return q
 
