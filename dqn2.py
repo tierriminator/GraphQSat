@@ -24,7 +24,7 @@ import time
 
 from gqsat.utils import build_argparser, evaluate, make_env
 from gqsat.models import EncoderCoreDecoder, SatModel
-from gqsat.agents import GraphAgent
+from gqsat.agents import GraphAgent, MiniSATAgent
 from gqsat.learners import GraphLearner
 from gqsat.buffer import ReplayGraphBuffer
 
@@ -140,8 +140,11 @@ class DQN(object):
         target_net.load_state_dict(net.state_dict())
 
         # load the buffer
-        with open(train_status["buffer_path"], "rb") as f:
-            self.buffer = pickle.load(f)
+        if train_status["buffer_path"] is not None:
+            with open(train_status["buffer_path"], "rb") as f:
+                self.buffer = pickle.load(f)
+        else:
+            self.buffer = None
         self.learner = GraphLearner(net, target_net, self.buffer, args)
         self.learner.step_ctr = train_status["step_ctr"]
 
@@ -456,11 +459,12 @@ class DQN(object):
         
         return res_q
 
-    def eval_q_from_graph(self, adj_mat, agg="max"):
+    def eval_q_from_graph(self, adj_mat, agg="max", use_minisat=False):
         """
         Evaluation of q-value from the graph structure. This function directly calls forward pass for the agent.
         :param hist_buffer: list of size 1 with all elements for graph (vertex_data, edge_data, connectivity, global_data)
         :param agg: aggregation of q-values for a graph (either "sum" or "mean")
+        :param use_minisat: Whether a run of minisat should be used to calculate the reward.
 
         :returns q: q-value for a given graph
         """
@@ -469,6 +473,16 @@ class DQN(object):
         obs = env.reset(self.args.train_time_max_decisions_allowed)
         if env.isSolved:
             return 0
+
+        if use_minisat:
+            # run the minisat agent to calculate the number of branches
+            agent = MiniSATAgent()
+            done = env.isSolved
+            q = 0
+            while not done:
+                obs, r, done = env.step(agent.act(obs))
+                q += r
+            return q
 
         q = self.agent.forward([obs])
         if agg == "sum":
