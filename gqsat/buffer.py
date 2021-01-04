@@ -15,6 +15,7 @@
 import torch
 import numpy as np
 from gqsat.utils import batch_graphs
+from rl_model.graph_nets import GeneratorModel
 
 
 class ReplayGraphBuffer:
@@ -30,7 +31,10 @@ class ReplayGraphBuffer:
         # dtype=object allows to store references to objects of arbitrary size
         self.observations = np.zeros((size, 4), dtype=object)
 
-    def add_transition(self, obs, a, r_next, done_next):
+    def add_transition(self, obs: GeneratorModel.Input, a, r_next, done_next):
+
+        assert 0 <= a < obs.con_act_cnt + obs.beh_act_cnt
+
         self.dones[self.ctr] = int(done_next)
         self.rewards[self.ctr] = r_next
         self.actions[self.ctr] = a
