@@ -282,6 +282,7 @@ class DQN(object):
         while self.learner.step_ctr < self.args.batch_updates:
 
             ret = 0
+            r = 0
             obs = self.env.reset(self.args.train_time_max_decisions_allowed)
             done = self.env.isSolved
 
