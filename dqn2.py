@@ -24,7 +24,7 @@ import time
 
 from gqsat.utils import build_argparser, evaluate, make_env
 from gqsat.models import EncoderCoreDecoder, SatModel
-from gqsat.agents import GraphAgent
+from gqsat.agents import GraphAgent, MiniSATAgent
 from gqsat.learners import GraphLearner
 from gqsat.buffer import ReplayGraphBuffer
 
@@ -415,6 +415,28 @@ class DQN(object):
                 f"median_relative_score: {np.nanmedian(res_list)}, mean_relative_score: {np.mean(res_list)}"
             )
 
+    def eval_q_for_agent_from_graph(self, adj_mat, use_minisat = False):
+        """
+        evaluate runtime for a given adj mat for the minisat or GQSat agent
+        :param adj_mat: adjacency matrix for the problem
+        :param use_minisat: uses minisat agent if true, else self.agent from the solver object
+        """
+
+        agent = MiniSATAgent() if use_minisat else self.agent
+        env = make_env(None, self.args, [adj_mat])
+        obs = env.reset(self.args.train_time_max_decisions_allowed)
+        done = env.isSolved:
+        if done:
+            return 0
+        q = 0
+        with torch.no_grad():
+            while not done:
+                obs,r,done,_ = env.step(agent.act([obs]))
+                q += r
+        return q
+
+
+
     def eval_q_from_file(self, eval_problems_paths=None, agg="sum"):
         """
         Q-value evaluation of problems in eval_problems_paths.
@@ -449,6 +471,7 @@ class DQN(object):
                     obs = eval_env.reset(
                         max_decisions_cap=self.args.test_time_max_decisions_allowed
                     )
+                    # TODO: This is broken since eval_q_from_graph is different now
                     q = self.eval_q_from_graph([obs], agg)
 
                     q_scores[eval_env.curr_problem] = q
@@ -459,11 +482,12 @@ class DQN(object):
         
         return res_q
 
-    def eval_q_from_graph(self, adj_mat, agg="max"):
+    def eval_q_from_graph(self, adj_mat, agg="max", use_minisat=False):
         """
         Evaluation of q-value from the graph structure. This function directly calls forward pass for the agent.
         :param hist_buffer: list of size 1 with all elements for graph (vertex_data, edge_data, connectivity, global_data)
         :param agg: aggregation of q-values for a graph (either "sum" or "mean")
+        :param use_minisat: Whether a run of minisat should be used to calculate the reward.
 
         :returns q: q-value for a given graph
         """
@@ -472,6 +496,16 @@ class DQN(object):
         obs = env.reset(self.args.train_time_max_decisions_allowed)
         if env.isSolved:
             return 0
+
+        if use_minisat:
+            # run the minisat agent to calculate the number of branches
+            agent = MiniSATAgent()
+            done = env.isSolved
+            q = 0
+            while not done:
+                obs, r, done, _ = env.step(agent.act(obs))
+                q += r
+            return q
 
         q = self.agent.forward([obs])
         if agg == "sum":
