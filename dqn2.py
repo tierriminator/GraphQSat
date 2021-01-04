@@ -416,6 +416,28 @@ class DQN(object):
                 f"median_relative_score: {np.nanmedian(res_list)}, mean_relative_score: {np.mean(res_list)}"
             )
 
+    def eval_q_for_agent_from_graph(self, adj_mat, use_minisat = False):
+        """
+        evaluate runtime for a given adj mat for the minisat or GQSat agent
+        :param adj_mat: adjacency matrix for the problem
+        :param use_minisat: uses minisat agent if true, else self.agent from the solver object
+        """
+
+        agent = MiniSATAgent() if use_minisat else self.agent
+        env = make_env(None, self.args, [adj_mat])
+        obs = env.reset(self.args.train_time_max_decisions_allowed)
+        done = env.isSolved
+        if done:
+            return 0
+        q = 0
+        with torch.no_grad():
+            while not done:
+                obs, r, done, _ = env.step(agent.act([obs]))
+                q += r
+        return q
+
+
+
     def eval_q_from_file(self, eval_problems_paths=None, agg="sum"):
         """
         Q-value evaluation of problems in eval_problems_paths.
@@ -450,6 +472,7 @@ class DQN(object):
                     obs = eval_env.reset(
                         max_decisions_cap=self.args.test_time_max_decisions_allowed
                     )
+                    # TODO: This is broken since eval_q_from_graph is different now
                     q = self.eval_q_from_graph([obs], agg)
 
                     q_scores[eval_env.curr_problem] = q
