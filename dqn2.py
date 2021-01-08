@@ -282,6 +282,7 @@ class DQN(object):
         while self.learner.step_ctr < self.args.batch_updates:
 
             ret = 0
+            r = 0
             obs = self.env.reset(self.args.train_time_max_decisions_allowed)
             done = self.env.isSolved
 
@@ -425,13 +426,13 @@ class DQN(object):
         agent = MiniSATAgent() if use_minisat else self.agent
         env = make_env(None, self.args, [adj_mat])
         obs = env.reset(self.args.train_time_max_decisions_allowed)
-        done = env.isSolved:
+        done = env.isSolved
         if done:
             return 0
         q = 0
         with torch.no_grad():
             while not done:
-                obs,r,done,_ = env.step(agent.act([obs]))
+                obs, r, done, _ = env.step(agent.act([obs]))
                 q += r
         return q
 
@@ -516,7 +517,7 @@ class DQN(object):
             q = q.flatten().max().cpu().item()
         elif agg == "expectation":
             flat_q = q.flatten()
-            q = torch.sum(torch.softmax(flat_q) * flat_q)
+            q = torch.sum(torch.softmax(flat_q, dim=0) * flat_q).cpu().item()
         else:
             raise ValueError(f"agg {agg} is not recognized")
         return q
