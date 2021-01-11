@@ -517,7 +517,7 @@ class DQN(object):
             q = q.flatten().max().cpu().item()
         elif agg == "expectation":
             flat_q = q.flatten()
-            q = torch.sum(torch.softmax(flat_q) * flat_q)
+            q = torch.sum(torch.softmax(flat_q, dim=0) * flat_q).cpu().item()
         else:
             raise ValueError(f"agg {agg} is not recognized")
         return q
