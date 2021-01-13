@@ -144,7 +144,7 @@ class DQN(object):
             with open(train_status["buffer_path"], "rb") as f:
                 self.buffer = pickle.load(f)
         else:
-            self.buffer = None
+            self.buffer = ReplayGraphBuffer(args, args.buffer_size)
         self.learner = GraphLearner(net, target_net, self.buffer, args)
         self.learner.step_ctr = train_status["step_ctr"]
 
