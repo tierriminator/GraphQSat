@@ -31,6 +31,7 @@ class ReplayGraphBuffer:
         self.observations = np.zeros((size, 4), dtype=object)
 
     def add_transition(self, obs, a, r_next, done_next):
+
         self.dones[self.ctr] = int(done_next)
         self.rewards[self.ctr] = r_next
         self.actions[self.ctr] = a
