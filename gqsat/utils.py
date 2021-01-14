@@ -474,6 +474,7 @@ def evaluate(agent, args, include_train_set=False):
     res = {}
     iters_minisat = {}
     iters_ours = {}
+    return_ours = {}
 
     st_time = time.time()
     print("Starting evaluation. Fasten your seat belts!")
@@ -491,6 +492,7 @@ def evaluate(agent, args, include_train_set=False):
         walltime = {}
         curr_iters_minisat = {}
         curr_iters_ours = {}
+        ep_reward_ours = {} 
         scores = {}
         with torch.no_grad():
 
@@ -501,7 +503,7 @@ def evaluate(agent, args, include_train_set=False):
                     max_decisions_cap=args.test_time_max_decisions_allowed
                 )
                 done = eval_env.isSolved
-
+                ep_reward = 0 
                 # solve problem using our model that we want to evaluate
                 while not done:
                     # if time.time() - st_time > args.eval_time_limit:
@@ -511,21 +513,22 @@ def evaluate(agent, args, include_train_set=False):
                     #     return res, eval_env.metadata, False
 
                     action = agent.act([obs], eps=0)
-                    obs, _, done, _ = eval_env.step(action)
-
+                    obs, r, done, _ = eval_env.step(action)
+                    ep_reward += r
                 walltime[eval_env.curr_problem] = time.time() - p_st_time
-                print(f"It took {walltime[eval_env.curr_problem]} seconds to solve a problem.")
+                # print(f"It took {walltime[eval_env.curr_problem]} seconds to solve a problem.")
 
                 # calculate interesting metrics and save them
                 sctr = 1 if eval_env.step_ctr == 0 else eval_env.step_ctr
                 ns = eval_env.normalized_score(sctr, eval_env.curr_problem)
-                print(f"Evaluation episode {pr+1} is over. Your score is {ns}.")
+                # print(f"Evaluation episode {pr+1} is over. Your score is {ns}.")
                 total_iters_ours += sctr
                 pdir, pname = os.path.split(eval_env.curr_problem)
 
                 # get iterations for this problem
                 curr_iters_minisat[eval_env.curr_problem] = eval_env.metadata[pdir][pname][1]
                 curr_iters_ours[eval_env.curr_problem] = eval_env.step_ctr
+                ep_reward_ours[eval_env.curr_problem] = ep_reward
 
                 total_iters_minisat += curr_iters_minisat[eval_env.curr_problem]
                 scores[eval_env.curr_problem] = ns
@@ -542,6 +545,7 @@ def evaluate(agent, args, include_train_set=False):
         res[pset] = scores
         iters_minisat[pset] = curr_iters_minisat
         iters_ours[pset] = curr_iters_ours
+        return_ours[pset] = ep_reward_ours
 
     agent.net.train()
     return (
@@ -554,5 +558,6 @@ def evaluate(agent, args, include_train_set=False):
             "mean_score": np.mean([el for el in scores.values()]),
             "median_score": np.median([el for el in scores.values()]),
         },
-        False
+        False,
+        return_ours
     )

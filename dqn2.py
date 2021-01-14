@@ -106,7 +106,10 @@ class DQN(object):
     (3) Q-value evaluation for the given graph happens in eval_q_from_graph
     """
     def __init__(self, args, train_status=None, eval=False):
-        self.writer = SummaryWriter()
+        if args.logdir:
+            self.writer = SummaryWriter(args.logdir)
+        else:
+            self.write = SummaryWriter()
         self.env = None
 
         if train_status is not None:
@@ -132,7 +135,12 @@ class DQN(object):
         net = SatModel.load_from_yaml(os.path.join(args.logdir, "model.yaml")).to(
             args.device
         )
-        net.load_state_dict(torch.load(train_status["latest_model_name"]))
+        if args.model_checkpoint:
+            print(f"loaded the model from checkpoint = {args.model_checkpoint}")
+            net.load_state_dict(torch.load(args.model_checkpoint))
+        else:
+            print(f"loaded the latest model = {train_status['latest_model_name']}")
+            net.load_state_dict(torch.load(train_status["latest_model_name"]))
 
         target_net = SatModel.load_from_yaml(
             os.path.join(args.logdir, "model.yaml")
@@ -176,7 +184,7 @@ class DQN(object):
 
         :returns: different self.object to be used in train() function
         """
-        # training mode, learning from scratch or continuing learning from some previously trained model
+        # training mode, learning from scratch
         args.logdir = self.writer.logdir
 
         model_save_path = os.path.join(args.logdir, "model.yaml")
@@ -334,7 +342,7 @@ class DQN(object):
                     if (
                         self.args.env_name == "sat-v0" and not self.learner.step_ctr % self.args.eval_freq
                     ) or self.eval_resume_signal:
-                        _, _, scores, _, self.eval_resume_signal = evaluate(
+                        _, _, scores, _, self.eval_resume_signal, _ = evaluate(
                             self.agent, self.args, include_train_set=False
                         )
 
@@ -399,7 +407,7 @@ class DQN(object):
         :param args: arguments for evaluation
         """
         st_time = time.time()
-        _, _, scores, eval_metadata, _ = evaluate(self.agent, self.args)
+        iters_minisat, iters_graphqsat, scores, eval_metadata, _, ep_reward = evaluate(self.agent, self.args)
         end_time = time.time()
 
         print(
@@ -411,10 +419,14 @@ class DQN(object):
 
         for pset, pset_res in scores.items():
             res_list = [el for el in pset_res.values()]
+            it_gqsat = [el for el in iters_graphqsat[pset].values()]
+            it_minisat = [el for el in iters_minisat[pset].values()]
+            reward_ours = [el for el in ep_reward[pset].values()]
             print(f"Results for {pset}")
             print(
-                f"median_relative_score: {np.nanmedian(res_list)}, mean_relative_score: {np.mean(res_list)}"
+                f"median_relative_score: {np.nanmedian(res_list)}, mean_relative_score: {np.mean(res_list)}, avg gqsat iters = {np.mean(it_gqsat)}, avg minisat iters = {np.mean(it_minisat)}, avg reward = {np.mean(reward_ours)}"
             )
+        return scores
 
     def eval_q_for_agent_from_graph(self, adj_mat, use_minisat = False):
         """
@@ -436,9 +448,7 @@ class DQN(object):
                 q += r
         return q
 
-
-
-    def eval_q_from_file(self, eval_problems_paths=None, agg="sum"):
+    def eval_q_from_file(self, eval_problems_paths=None, agg="max"):
         """
         Q-value evaluation of problems in eval_problems_paths.
         If eval_problems_paths is None, evaluation will happen in args.eval_problems_paths
@@ -472,9 +482,24 @@ class DQN(object):
                     obs = eval_env.reset(
                         max_decisions_cap=self.args.test_time_max_decisions_allowed
                     )
-                    # TODO: This is broken since eval_q_from_graph is different now
-                    q = self.eval_q_from_graph([obs], agg)
-
+                    if eval_env.isSolved:
+                        q_scores[eval_env.curr_problem] = 0.
+                        continue
+                    
+                    q = self.agent.forward([obs])
+                    # print(q)
+                    if agg == "sum":
+                        q = q.max(1).values.sum().cpu().item()
+                    elif agg == "mean":
+                        q = q.max(1).values.mean().cpu().item()
+                    elif agg == "max":
+                        q = q.flatten().max().cpu().item()
+                    elif agg == "expectation":
+                        flat_q = q.flatten()
+                        q = torch.sum(torch.softmax(flat_q, dim=0) * flat_q).cpu().item()
+                    else:
+                        raise ValueError(f"agg {agg} is not recognized")
+                    # print(f"{eval_env.test_to} q value of {eval_env.curr_problem} = {q}")
                     q_scores[eval_env.curr_problem] = q
 
                     pr += 1

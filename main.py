@@ -51,11 +51,16 @@ def eval_runtime(eval_args):
     dqn = DQN(eval_args, train_status, True)
     
     # evaluate run-time
-    dqn.eval_runtime()
+    ep_reward = dqn.eval_runtime()
 
     # evaluate q-values
-    # print(dqn.eval_q_from_file(agg = "mean"))
-
+    qvals = dqn.eval_q_from_file(agg = "max")
+    
+    for pset, pset_items in qvals.items():
+        qval_list = [el for el in pset_items.values()]
+        print(f"Average Q value for {pset} was {np.mean(qval_list)}")
+        ep_reward = [el for el in ep_reward[pset].values()]
+        print(f"Average episode reward for {pset} was {np.mean(ep_reward)}")
 
 
 

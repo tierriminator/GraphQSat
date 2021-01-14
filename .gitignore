@@ -139,7 +139,7 @@ cython_debug/
 
 #runs
 runs/
-
+log/
 #cluster
 lsf.*
 .nfs*
