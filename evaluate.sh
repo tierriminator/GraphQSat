@@ -11,22 +11,34 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# PATH_TO_EVAL_DATA=/cluster/scratch/aunagar/graphqsat/data/graphcoloring/flat50_115/
-# PATH_TO_EVAL_DATA=/cluster/scratch/aunagar/graphqsat/data/generated/sat-218-50-mc218-restrict2-it1-donefull-deterpi-bs64-core10-lowerlr-tf4-e1-exp5000-checkpointedsolver/test/
-# PATH_TO_EVAL_DATA=/cluster/scratch/aunagar/graphqsat/data/generated/sat-430-100-mc430-restrict2-it1-donefull-deterpi-bs64-core10-tf4-e1-exp5000/
-PATH_TO_EVAL_DATA=/cluster/scratch/aunagar/graphqsat/data/generated/sat-218-50-mc218-restrict2-it1-donefull-deterpi-bs64-core10-tf4-e1-exp5000_v3/test/
-# PATH_TO_EVAL_DATA=/cluster/home/aunagar/dl-project-2020/dataset/generated/gen430-100from218-50/
-# PATH_TO_EVAL_DATA=/cluster/home/aunagar/dl-project-2020/dataset/generated/sat-218-50-mc218-restrict2-it1-donefull-deterpi-bs64-core10-tf4-e1-exp5000
-# PATH_TO_EVAL_DATA=/cluster/scratch/aunagar/graphqsat/data/unifrandom3sat/uf100_430/test/
-# PATH_TO_EVAL_DATA=/cluster/scratch/aunagar/graphqsat/data/unifrandom3sat/uf125_538/test/
-# PATH_TO_EVAL_DATA=/cluster/scratch/aunagar/graphqsat/data/unifrandom3sat/uf50_218/test/
-MODEL_DIR=/cluster/scratch/aunagar/dlproject/trained_models/solver/cuda/
-CHECKPOINT=model_31000
-# MODEL_DIR=/cluster/scratch/aunagar/graphqsat/runs//Jan13_GenSATdata_checkpointed/
-# CHECKPOINT=model_27000
-# MODEL_DIR=/cluster/scratch/aunagar/graphqsat/runs//50_218_mixeddata_checkpointed/
-# CHECKPOINT=model_28000
 
+########### choose your test data ############
+##### random
+PATH_TO_TEST_DATA=../../dataset/random/sat50_218/test/
+# PATH_TO_TEST_DATA=../../dataset/random/unsat50_218/test/
+# PATH_TO_TEST_DATA=../../dataset/random/sat100_430/test/
+# PATH_TO_TEST_DATA=../../dataset/random/unsat100_430/test/
+
+#### generated
+# PATH_TO_TEST_DATA=../../dataset/generated/gensat/50_218/test/
+# PATH_TO_TEST_DATA=../../dataset/generated/gensat/100_430/test
+
+##### graph coloring
+# PATH_TO_TEST_DATA=../../dataset/graphcoloring/flat50_115/
+# PATH_TO_TEST_DATA=../../dataset/graphcoloring/flat100_239/
+# PATH_TO_TEST_DATA=../../dataset/graphcoloring/flat150_360/
+# PATH_TO_TEST_DATA=../../dataset/graphcoloring/flat200_479/
+
+########## choose your model ############
+# MODEL_DIR=../../trained_models/solver/gqsat-original/
+# CHECKPOINT=model_31000
+MODEL_DIR=../../trained_models/solver/gqsat-star/
+CHECKPOINT=model_28000
+
+########## choose dir for tensorboard logs #####
+LOGDIR=./runs/test/
+
+python add_metadata.py --eval-problems-paths=$PATH_TO_TEST_DATA
 python3 main.py \
   --evaluate \
   --logdir $LOGDIR \

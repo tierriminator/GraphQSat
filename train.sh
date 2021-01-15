@@ -12,10 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+############ Choose your training and validation data ################
+### for GraphQSAT
+PATH_TO_TRAIN_DATA=../../dataset/random/sat50_218/train/
+PATH_TO_EVAL_DATA=../../dataset/random/sat50_218/eval/
+### for GraphQSAT*
+# PATH_TO_TRAIN_DATA=../../dataset/generated/gensat/50_218/train/
+# PATH_TO_EVAL_DATA=../../dataset/generated/gensat/50_218/eval/
+
 # Parameters to set:
-LOGDIR=/cluster/scratch/aunagar/graphqsat/runs/test/
-PATH_TO_TRAIN_DATA=/cluster/scratch/aunagar/graphqsat/data/generated/sat-218-50-mc218-restrict2-it1-donefull-deterpi-bs64-core10-tf4-e1-exp5000_v3/train/
-PATH_TO_EVAL_DATA=/cluster/scratch/aunagar/graphqsat/data/generated/sat-218-50-mc218-restrict2-it1-donefull-deterpi-bs64-core10-tf4-e1-exp5000_v3/eval/
+LOGDIR=./runs/train/
+# add meta-data from MiniSAT
+python add_metadata.py --eval-problems-paths=$PATH_TO_TRAIN_DATA
+python add_metadata.py --eval-problems-paths=$PATH_TO_EVAL_DATA
+######################## train!
 python3 main.py \
   --logdir $LOGDIR \
   --env-name sat-v0 \
