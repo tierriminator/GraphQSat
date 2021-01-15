@@ -13,10 +13,10 @@
 # limitations under the License.
 
 python3 main.py \
-  --logdir /cluster/scratch/aunagar/graphqsat/log \
+  --logdir /cluster/scratch/aunagar/graphqsat/runs/50_218_mixeddata_checkpointed/ \
   --env-name sat-v0 \
-  --train-problems-paths /cluster/scratch/aunagar/graphqsat/data/unifrandom3sat/uf50_218/train/ \
-  --eval-problems-paths /cluster/scratch/aunagar/graphqsat/data/unifrandom3sat/uf50_218/eval/ \
+  --train-problems-paths /cluster/scratch/aunagar/graphqsat/data/mixed/sat50_218/train/ \
+  --eval-problems-paths /cluster/scratch/aunagar/graphqsat/data/mixed/sat50_218/eval/ \
   --lr 0.00002 \
   --bsize 64 \
   --buffer-size 20000 \

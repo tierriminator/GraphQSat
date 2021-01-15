@@ -17,6 +17,7 @@ import numpy as np
 import torch
 import argparse
 import yaml
+import matplotlib.pyplot as plt
 
 from gqsat.utils import build_argparser, build_eval_argparser
 from dqn2 import DQN
@@ -51,10 +52,19 @@ def eval_runtime(eval_args):
     dqn = DQN(eval_args, train_status, True)
     
     # evaluate run-time
-    dqn.eval_runtime()
+    ep_reward = dqn.eval_runtime()
 
     # evaluate q-values
-    # print(dqn.eval_q_from_file(agg = "mean"))
+    qvals = dqn.eval_q_from_file(agg = "max")
+    
+    for pset, pset_items in qvals.items():
+        qval_list = [el for el in pset_items.values()]
+        print(f"Average Q value for {pset} was {np.mean(qval_list)}")
+        ep_reward = [el for el in ep_reward[pset].values()]
+        plt.scatter(x=ep_reward, y=qval_list)
+        plt.xlabel("episode reward")
+        plt.ylabel("grapj q set steps")
+        plt.savefig(f"pset20-91gen.png")
 
 
 
