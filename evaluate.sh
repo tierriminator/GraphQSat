@@ -29,13 +29,13 @@ CHECKPOINT=model_31000
 
 python3 main.py \
   --evaluate \
-  --logdir ./log \
+  --logdir $LOGDIR \
   --env-name sat-v0 \
   --core-steps -1 \
   --eps-final 0.0 \
   --eval-time-limit 100000000000000 \
   --no_restarts \
   --test_time_max_decisions_allowed 500 \
-  --eval-problems-paths $PATH_TO_EVAL_DATA \
+  --eval-problems-paths $PATH_TO_TEST_DATA \
   --model-dir $MODEL_DIR \
   --model-checkpoint $CHECKPOINT.chkp

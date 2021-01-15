@@ -61,11 +61,7 @@ def eval_runtime(eval_args):
         qval_list = [el for el in pset_items.values()]
         print(f"Average Q value for {pset} was {np.mean(qval_list)}")
         ep_reward = [el for el in ep_reward[pset].values()]
-        plt.scatter(x=ep_reward, y=qval_list)
-        plt.xlabel("episode reward")
-        plt.ylabel("grapj q set steps")
-        plt.savefig(f"pset20-91gen.png")
-
+        print(f"Average episode reward for {pset} was {np.mean(ep_reward)}")
 
 
 

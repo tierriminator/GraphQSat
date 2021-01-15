@@ -12,11 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Parameters to set:
+LOGDIR=/cluster/scratch/aunagar/graphqsat/runs/test/
+PATH_TO_TRAIN_DATA=/cluster/scratch/aunagar/graphqsat/data/generated/sat-218-50-mc218-restrict2-it1-donefull-deterpi-bs64-core10-tf4-e1-exp5000_v3/train/
+PATH_TO_EVAL_DATA=/cluster/scratch/aunagar/graphqsat/data/generated/sat-218-50-mc218-restrict2-it1-donefull-deterpi-bs64-core10-tf4-e1-exp5000_v3/eval/
 python3 main.py \
-  --logdir /cluster/scratch/aunagar/graphqsat/runs/50_218_mixeddata_checkpointed/ \
+  --logdir $LOGDIR \
   --env-name sat-v0 \
-  --train-problems-paths /cluster/scratch/aunagar/graphqsat/data/mixed/sat50_218/train/ \
-  --eval-problems-paths /cluster/scratch/aunagar/graphqsat/data/mixed/sat50_218/eval/ \
+  --train-problems-paths $PATH_TO_TRAIN_DATA \
+  --eval-problems-paths $PATH_TO_EVAL_DATA \
   --lr 0.00002 \
   --bsize 64 \
   --buffer-size 20000 \
